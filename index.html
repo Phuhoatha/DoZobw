@@ -29,6 +29,8 @@
   .controls button:active{transform:scale(.98)}
   .note{font-size:12px;color:var(--muted);line-height:1.5;margin:14px 2px}
   footer{text-align:center;color:#8291ac;font-size:11px;margin:18px 0 4px}
+
+  /* Hệ thống Giao diện điều hướng Menu & Xếp hạng */
   .menu-btn{position:absolute;top:10px;left:10px;z-index:100;padding:6px 12px;font-size:13px;background:#1e293b;color:var(--accent);border:1px solid var(--accent);border-radius:8px;font-weight:700;cursor:pointer}
   .popup-menu{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,18,36,.96);z-index:90;text-align:center;padding:20px}
   .popup-menu.show{display:flex}
@@ -92,7 +94,10 @@
   const menuToggle = document.getElementById('menuToggle'), popupMenu = document.getElementById('popupMenu'), resumeBtn = document.getElementById('resumeBtn'), openRankBtn = document.getElementById('openRankBtn'), leaderboardPanel = document.getElementById('leaderboardPanel'), closeRankBtn = document.getElementById('closeRankBtn'), rankList = document.getElementById('rankList');
   let best = Number(localStorage.getItem('pe_best') || 0), total = Number(localStorage.getItem('pe_total') || 0);
   let player, obstacles, score, running = false, last = 0, spawn = 0, lane = 1, animation;
+  
+  // KHÔI PHỤC TOÀN BỘ SỐ LÀN ĐƯỜNG BỊ THIẾU
   const W = 360, H = 520, lanes =;
+  
   bestEl.textContent = best; totalEl.textContent = total;
   const dummyLeaderboard = [
     { name: "Phuhoatha (Bạn)", score: best, isPlayer: true },
@@ -142,5 +147,3 @@
   document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')move(-1);if(e.key==='ArrowRight'||e.key==='d')move(1);if((e.key===' '||e.key==='Enter')&&!running)start()});
   let touchX=null;
   canvas.addEventListener('touchstart',e=>{touchX=e.changedTouches[0].clientX},{passive:true});
-  canvas.addEventListener('touchend',e=>{if(touchX===null)return;const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>20)move(dx>0?1:-1);touchX=null},{passive:true});
-  function renderLeaderboard() {
