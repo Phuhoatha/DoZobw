@@ -30,7 +30,7 @@
   .note{font-size:12px;color:var(--muted);line-height:1.5;margin:14px 2px}
   footer{text-align:center;color:#8291ac;font-size:11px;margin:18px 0 4px}
 
-  /* CSS Thêm vào cho phần Menu mới */
+  /* CSS cho Menu */
   .menu-btn {
     position: absolute;
     top: 10px;
@@ -72,10 +72,57 @@
     color: var(--text);
     border: 1px solid #475569;
     font-weight: 600;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
   }
   .menu-list-btn:hover {
     background: #263653;
     border-color: var(--accent);
+  }
+
+  /* CSS cho Bảng Xếp Hạng mới */
+  .leaderboard-panel {
+    display: none;
+    position: absolute;
+    inset: 20px;
+    background: #141b2d;
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    z-index: 95;
+    padding: 20px;
+    flex-direction: column;
+  }
+  .leaderboard-panel.show {
+    display: flex;
+  }
+  .leaderboard-title {
+    color: var(--accent);
+    font-size: 20px;
+    margin: 0 0 15px 0;
+    text-align: center;
+    font-weight: bold;
+  }
+  .rank-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 0;
+    list-style: none;
+  }
+  .rank-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #1e2640;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .rank-item.top3 {
+    border-left: 3px solid gold;
+    background: #23305a;
   }
 </style>
 </head>
@@ -88,8 +135,18 @@
   <div class="popup-menu" id="popupMenu">
     <h2>DANH MỤC GAME</h2>
     <button class="menu-list-btn" id="resumeBtn">▶️ Tiếp Tục</button>
+    <button class="menu-list-btn" id="openRankBtn">🏆 Xếp Hạng</button>
     <button class="menu-list-btn" onclick="window.location.reload();">🔄 Chơi Lại</button>
     <button class="menu-list-btn" onclick="window.open('https://github.com', '_blank');">💻 GitHub</button>
+  </div>
+
+  <!-- Giao diện Bảng Xếp Hạng ẩn/hiện -->
+  <div class="leaderboard-panel" id="leaderboardPanel">
+    <div class="leaderboard-title">🏆 BẢNG XẾP HẠNG</div>
+    <ul class="rank-list" id="rankList">
+      <!-- Danh sách người chơi sẽ tự động điền vào đây -->
+    </ul>
+    <button id="closeRankBtn" style="background: #ef4444; color: white; width: 100%;">Quay Lại Menu</button>
   </div>
 
   <header>
@@ -124,15 +181,29 @@
   const scoreEl = document.getElementById('score'), bestEl = document.getElementById('best'), totalEl = document.getElementById('total');
   const overlay = document.getElementById('overlay'), title = document.getElementById('overlayTitle'), text = document.getElementById('overlayText'), startBtn = document.getElementById('start');
   
-  // Lấy các thẻ của Menu mới
+  // DOM phần Menu và Xếp Hạng mới
   const menuToggle = document.getElementById('menuToggle');
   const popupMenu = document.getElementById('popupMenu');
   const resumeBtn = document.getElementById('resumeBtn');
+  const openRankBtn = document.getElementById('openRankBtn');
+  const leaderboardPanel = document.getElementById('leaderboardPanel');
+  const closeRankBtn = document.getElementById('closeRankBtn');
+  const rankList = document.getElementById('rankList');
 
   let best = Number(localStorage.getItem('pe_best') || 0), total = Number(localStorage.getItem('pe_total') || 0);
   let player, obstacles, score, running = false, last = 0, spawn = 0, lane = 1, animation;
   const W=360,H=520, lanes=[70,180,290];
   bestEl.textContent=best; totalEl.textContent=total;
+  
+  // Dữ liệu người chơi ảo (Demo bảng xếp hạng)
+  const dummyLeaderboard = [
+    { name: "Phuhoatha (Bạn)", score: best, isPlayer: true },
+    { name: "CryptoKing", score: 850, isPlayer: false },
+    { name: "Sói Công Nghệ", score: 620, isPlayer: false },
+    { name: "GamerPro9x", score: 410, isPlayer: false },
+    { name: "MiniGame_Fan", score: 150, isPlayer: false }
+  ];
+
   function reset(){player={x:lanes[1],y:440,w:34,h:42};obstacles=[];score=0;spawn=0;lane=1;scoreEl.textContent='0';}
   function drawBackground(){
     ctx.fillStyle='#0b1224';ctx.fillRect(0,0,W,H);
@@ -172,49 +243,3 @@
     if(earned>best)best=earned;
     localStorage.setItem('pe_best',best);localStorage.setItem('pe_total',total);
     bestEl.textContent=best;totalEl.textContent=total;
-    title.textContent='Kết thúc lượt chơi!';
-    text.textContent=`Bạn đạt ${earned} điểm trong lượt này. Điểm chỉ là điểm thử nghiệm trên thiết bị, chưa có giá trị tiền thật.`;
-    startBtn.textContent='CHƠI LẠI';overlay.classList.remove('hidden');
-  }
-  function move(dir){if(!running)return;lane=Math.max(0,Math.min(2,lane+dir));player.x=lanes[lane];}
-  document.getElementById('left').addEventListener('click',()=>move(-1));
-  document.getElementById('right').addEventListener('click',()=>move(1));
-  startBtn.addEventListener('click',start);
-  document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')move(-1);if(e.key==='ArrowRight'||e.key==='d')move(1);if((e.key===' '||e.key==='Enter')&&!running)start();});
-  let touchX=null;
-  canvas.addEventListener('touchstart',e=>{touchX=e.changedTouches[0].clientX;},{passive:true});
-  canvas.addEventListener('touchend',e=>{if(touchX===null)return;const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>20)move(dx>0?1:-1);touchX=null;},{passive:true});
-  
-  // Logic Xử lý Ẩn/Hiện và Tạm dừng game của Menu mới
-  menuToggle.addEventListener('click', () => {
-    if (!popupMenu.classList.contains('show')) {
-      // Mở Menu và Tạm dừng game
-      popupMenu.classList.add('show');
-      menuToggle.innerText = '✕ ĐÓNG';
-      if (running) {
-        running = false; 
-        cancelAnimationFrame(animation);
-      }
-    } else {
-      closeMenu();
-    }
-  });
-
-  resumeBtn.addEventListener('click', closeMenu);
-
-  function closeMenu() {
-    popupMenu.classList.remove('show');
-    menuToggle.innerText = '☰ MENU';
-    // Nếu game đang trong trận (không hiện bảng Overlay bắt đầu/thua) thì chạy tiếp
-    if (!running && overlay.classList.contains('hidden')) {
-      running = true;
-      last = performance.now();
-      animation = requestAnimationFrame(frame);
-    }
-  }
-
-  reset();drawBackground();drawPlayer();
-})();
-</script>
-</body>
-</html>
